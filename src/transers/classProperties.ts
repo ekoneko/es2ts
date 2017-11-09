@@ -26,10 +26,12 @@ export default function (ast: babelTypes.File, content: string) {
     enter(path) {
       if (path.node.type !== 'ClassDeclaration') return
       const node = <babelTypes.ClassDeclaration>path.node
-      const definedNames = []
+      // TODO: detect verify class is react
+      const definedNames = ['state', 'props', 'context']
       const unDefinedNames = []
       traverse(node.body, {
-        enter({ node, parent }) {
+        enter(path) {
+          const { node, parent, scope, parentPath} = path
           if (node.type === 'ClassProperty') {
             definedNames.push((<babelTypes.ClassProperty>node).key.name)
           }
@@ -37,7 +39,11 @@ export default function (ast: babelTypes.File, content: string) {
           if (node.type === 'ThisExpression') {
             const property = (<babelTypes.MemberExpression>parent).property
             if (property.type === 'Identifier') {
-              if (definedNames.indexOf(property.name) === -1 && unDefinedNames.indexOf(property.name) === -1) {
+              if (
+                definedNames.indexOf(property.name) === -1 &&
+                unDefinedNames.indexOf(property.name) === -1 &&
+                parentPath.parent.type !== 'CallExpression' // not call class method
+              ) {
                 unDefinedNames.push(property.name)
               }
             }

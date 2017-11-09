@@ -6,7 +6,9 @@ const code = `
 import React, { PureComponent } from 'react';
 class Tile extends PureComponent {
   private tail
+  update() {}
   render() {
+    this.update()
     const content = this.title + this.content + this.tail;
     return <div>{this.title}{content}</div>;
   }
@@ -19,7 +21,9 @@ class Tile extends PureComponent {
   private title: any;
   private content: any;
   private tail;
+  update() {}
   render() {
+    this.update();
     const content = this.title + this.content + this.tail;
     return <div>{this.title}{content}</div>;
   }
