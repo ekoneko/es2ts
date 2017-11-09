@@ -25,11 +25,14 @@ export function includeJSX (code: codeType): boolean {
 export function getAST (code: codeType): babelTypes.File {
   if (typeof code === 'string') {
     const { ast } = babel.transform(code, {
+      // TODO: configurable
       "presets": [],
       "plugins": [
         "syntax-typescript",
         "syntax-jsx",
-        "syntax-class-properties"
+        "syntax-class-properties",
+        "syntax-object-rest-spread",
+        "syntax-dynamic-import",
       ]
     })
     return <babelTypes.File>ast

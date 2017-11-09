@@ -38,7 +38,7 @@ export default function (ast: babelTypes.File, content: string) {
 
           if (node.type === 'ThisExpression') {
             const property = (<babelTypes.MemberExpression>parent).property
-            if (property.type === 'Identifier') {
+            if (property && property.type === 'Identifier') {
               if (
                 definedNames.indexOf(property.name) === -1 &&
                 unDefinedNames.indexOf(property.name) === -1 &&
