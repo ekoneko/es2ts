@@ -10,6 +10,7 @@ import * as glob from 'glob'
 
 import extendTranser from './transers/extend'
 import implicitStaticVarible from './transers/implicitStaticVarible'
+import classProperties from './transers/classProperties'
 
 const readFileAsync = promisify(fs.readFile)
 const writeFileAsync = promisify(fs.writeFile)
@@ -69,6 +70,7 @@ function getDistPath (src: string, dist: string|void, isJSX: () => boolean) {
 function transform (ast: babelTypes.File, content: string): string {
   extendTranser(ast, content)
   implicitStaticVarible(ast, content)
+  classProperties(ast, content)
 
   const {code} = babelGenerator(ast, {}, content)
   return code

@@ -13,12 +13,11 @@ export default function (ast: babelTypes.File, content: string) {
 
     if (node.type === 'ExportNamedDeclaration') {
       node = <any>node.declaration
-    }
-    if (node.type === 'ExportDefaultDeclaration') {
+    } else if (node.type === 'ExportDefaultDeclaration') {
       node = <any>node.declaration
     }
 
-    if (node.type !== 'ClassDeclaration') continue
+    if (!node || node.type !== 'ClassDeclaration') continue
     const className = node.id.name
     if ([comopnentLabel, pureComponentLabel].indexOf((<any>node.superClass).name) > -1) {
       (<any>node.superClass).name += `<I${className}Props, I${className}State>`;

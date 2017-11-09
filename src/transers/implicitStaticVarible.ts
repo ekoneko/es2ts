@@ -13,21 +13,20 @@ export default function (ast: babelTypes.File, content: string) {
 
     if (node.type === 'ExportNamedDeclaration') {
       node = <any>node.declaration
-    }
-    if (node.type === 'ExportDefaultDeclaration') {
+    } else if (node.type === 'ExportDefaultDeclaration') {
       node = <any>node.declaration
     }
 
-    if (node.type === 'ClassDeclaration') {
+    if (node && node.type === 'ClassDeclaration') {
       classNode = node
     } else if (classNode && node.type === 'ExpressionStatement') {
       const expression = node.expression
 
       if (
-        expression && 
-        expression.type === 'AssignmentExpression' && 
-        expression.operator === '=' && 
-        expression.left.type === 'MemberExpression' && 
+        expression &&
+        expression.type === 'AssignmentExpression' &&
+        expression.operator === '=' &&
+        expression.left.type === 'MemberExpression' &&
         expression.left.object.type === 'Identifier' &&
         expression.left.property.type === 'Identifier'
       ) {

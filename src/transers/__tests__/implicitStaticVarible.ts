@@ -52,7 +52,7 @@ describe('extends transform', () => {
     implicitStaticVarible(ast, code)
     const {code: generateCode} = babelGenerator(ast, {}, code)
     it(i, () => {
-      expect(format(generateCode) === result).toBeTruthy()
+      expect(format(generateCode)).toBe(result)
     })
   }
 })
