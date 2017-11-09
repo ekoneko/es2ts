@@ -10,9 +10,14 @@ export default function (ast: babelTypes.File, content: string) {
 
   for (let i = 0; i < ast.program.body.length; i++) {
     let node = ast.program.body[i]
+
+    if (node.type === 'ExportNamedDeclaration') {
+      node = <any>node.declaration
+    }
     if (node.type === 'ExportDefaultDeclaration') {
       node = <any>node.declaration
     }
+
     if (node.type !== 'ClassDeclaration') continue
     const className = node.id.name
     if ([comopnentLabel, pureComponentLabel].indexOf((<any>node.superClass).name) > -1) {

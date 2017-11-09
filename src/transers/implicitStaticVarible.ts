@@ -9,7 +9,15 @@ export default function (ast: babelTypes.File, content: string) {
   let classNode
   const properties = []
   for (let i = 0; i < ast.program.body.length; i++) {
-    const node  = ast.program.body[i]
+    let node  = ast.program.body[i]
+
+    if (node.type === 'ExportNamedDeclaration') {
+      node = <any>node.declaration
+    }
+    if (node.type === 'ExportDefaultDeclaration') {
+      node = <any>node.declaration
+    }
+
     if (node.type === 'ClassDeclaration') {
       classNode = node
     } else if (classNode && node.type === 'ExpressionStatement') {
