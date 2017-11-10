@@ -9,8 +9,9 @@ import babelGenerator from 'babel-generator'
 import * as glob from 'glob'
 
 import extendTranser from './transers/extend'
-import implicitStaticVarible from './transers/implicitStaticVarible'
-import classProperties from './transers/classProperties'
+import implicitStaticVaribleTranser from './transers/implicitStaticVarible'
+import classPropertiesTranser from './transers/classProperties'
+import styleComponentsTranser from  './transers/styleComponents'
 
 const readFileAsync = promisify(fs.readFile)
 const writeFileAsync = promisify(fs.writeFile)
@@ -19,7 +20,6 @@ const writeFileAsync = promisify(fs.writeFile)
  * Transform input .js file (es6+) to .ts
  * if the input file include some jsx, it will output a tsx file
  */
-
 export async function transformFile (src: string, dist?: string) {
   console.log('transform file start', src);
   const code = (await readFileAsync(src)).toString()
@@ -45,7 +45,7 @@ export async function transformDir (src: string, dist?: string, options?: any) {
   }
 }
 
-export default function transformContent (content: string) {
+export function transformContent (content: string) {
   const ast = getAST(content)
 
   // transform content
@@ -69,8 +69,9 @@ function getDistPath (src: string, dist: string|void, isJSX: () => boolean) {
 
 function transform (ast: babelTypes.File, content: string): string {
   extendTranser(ast, content)
-  implicitStaticVarible(ast, content)
-  classProperties(ast, content)
+  implicitStaticVaribleTranser(ast, content)
+  classPropertiesTranser(ast, content)
+  styleComponentsTranser(ast, content)
 
   const {code} = babelGenerator(ast, {}, content)
   return code
