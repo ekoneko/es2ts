@@ -6,22 +6,6 @@ import * as babelTypes from 'babel-types'
  * Add class properties's declaration
  */
 export default function (ast: babelTypes.File, content: string) {
-  let classNode
-
-  for (let i = 0; i < ast.program.body.length; i++) {
-    let node  = ast.program.body[i]
-
-    if (node.type === 'ExportNamedDeclaration') {
-      node = <any>node.declaration
-    } else if (node.type === 'ExportDefaultDeclaration') {
-      node = <any>node.declaration
-    }
-
-    if (node && node.type === 'ClassDeclaration') {
-      classNode = node
-    }
-  }
-
   traverse(ast, {
     enter(path) {
       if (path.node.type !== 'ClassDeclaration') return

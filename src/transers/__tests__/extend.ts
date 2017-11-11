@@ -39,6 +39,11 @@ class Tile extends React.PureComponent {
     return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
   }
 }
+class B extends React.PureComponent {
+  render() {
+    return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+  }
+}
 `.trim()
 
 const result1 = `
@@ -50,6 +55,17 @@ interface ITileState {
   [key: string]: any;
 }
 class Tile extends React.PureComponent<ITileProps, ITileState> {
+  render() {
+    return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+  }
+}
+interface IBProps {
+  [key: string]: any;
+}
+interface IBState {
+  [key: string]: any;
+}
+class B extends React.PureComponent<IBProps, IBState> {
   render() {
     return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
   }

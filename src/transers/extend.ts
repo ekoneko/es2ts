@@ -45,8 +45,10 @@ export default function (ast: babelTypes.File, content: string) {
       plugins: ["syntax-typescript"]
     });
 
-    ast.program.body.splice(i, 0, ...(<babelTypes.File>interfaceAST).program.body)
-    i += ast.program.body.length
+    const interfaceBody = (<babelTypes.File>interfaceAST).program.body
+
+    ast.program.body.splice(i, 0, ...interfaceBody)
+    i += interfaceBody.length
   }
 }
 
