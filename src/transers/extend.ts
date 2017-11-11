@@ -19,8 +19,19 @@ export default function (ast: babelTypes.File, content: string) {
 
     if (!node || node.type !== 'ClassDeclaration') continue
     const className = node.id ? node.id.name : ''
-    if ([comopnentLabel, pureComponentLabel].indexOf((<any>node.superClass).name) > -1) {
-      (<any>node.superClass).name += `<I${className}Props, I${className}State>`;
+
+    if (node.superClass.type === 'Identifier') {
+      if ([comopnentLabel, pureComponentLabel].indexOf((node.superClass).name) > -1) {
+        (node.superClass).name += `<I${className}Props, I${className}State>`;
+      }
+    } else if (node.superClass.type === 'MemberExpression') {
+      const object = <babelTypes.Identifier>node.superClass.object
+      const property = <babelTypes.Identifier>node.superClass.property
+
+      const name = object.name + '.' + property.name
+      if ([comopnentLabel, pureComponentLabel].indexOf(name) > -1) {
+        property.name += `<I${className}Props, I${className}State>`
+      }
     }
 
     const {ast: interfaceAST} = babel.transform(`
