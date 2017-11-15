@@ -33,6 +33,40 @@ Tile.propTypes = {
 };
 `.trim()
 
+const code1 = `
+import React, { PureComponent } from 'react';
+withWrapper(
+  class Tile extends PureComponent {
+    render() {
+      return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+    }
+  }
+);
+class B {}
+B.displayName = 'ClassB'
+Tile.propTypes = {
+  draggable: PropTypes.bool
+};
+`.trim()
+
+const result1 = `
+import React, { PureComponent } from 'react';
+withWrapper(class Tile extends PureComponent {
+  static propTypes;
+  render() {
+    return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+  }
+});
+class B {
+  static displayName;
+}
+B.displayName = 'ClassB';
+Tile.propTypes = {
+  draggable: PropTypes.bool
+};
+`.trim()
+
+
 const cases = {}
 prefixs.map(pre => {
   cases[pre||'default'] = {
@@ -53,6 +87,13 @@ describe('extends transform', () => {
     const {code: generateCode} = babelGenerator(ast, {}, code)
     it(i, () => {
       expect(format(generateCode)).toBe(result)
+    })
+
+    it ('with wrapper', () => {
+      const ast = getAST(code1)
+      implicitStaticVarible(ast, code1)
+      const generateCode = babelGenerator(ast, {}, code1).code
+      expect(format(generateCode)).toBe(result1)
     })
   }
 })

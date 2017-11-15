@@ -1,55 +1,72 @@
 import * as babel from 'babel-core'
 import traverse from 'babel-traverse'
-import * as babelTypes from 'babel-types'
+import * as types from 'babel-types'
 
 /**
  * Transform `class Name extends Component` to `class Name extends Component<NameProps, NameState>`
  */
-export default function (ast: babelTypes.File, content: string) {
-  const {comopnentLabel, pureComponentLabel} = getComponentLabel(ast)
+export default function (ast: types.File, content: string) {
+  // const {comopnentLabel, pureComponentLabel} = getComponentLabel(ast)
 
-  for (let i = 0; i < ast.program.body.length; i++) {
-    let node = ast.program.body[i]
+  traverse(ast, {
+    enter(path) {
+      const { node } = path
+      if (!types.isClassDeclaration(node) && !types.isClassExpression(node)) return
+      const className = node.id ? node.id.name : ''
 
-    if (node.type === 'ExportNamedDeclaration') {
-      node = <any>node.declaration
-    } else if (node.type === 'ExportDefaultDeclaration') {
-      node = <any>node.declaration
+      transformSuperClass(node.superClass, getComponentLabel(ast), className)
+
+      const interfaceAST = <types.File>babel.transform(`
+        interface I${className}Props {
+          [key: string]: any
+        }
+        interface I${className}State {
+          [key: string]: any
+        }
+      `, {
+        plugins: ["syntax-typescript"]
+      }).ast
+
+      const insertPath = getInsertableParent(path)
+      insertPath.insertBefore(interfaceAST.program.body)
     }
+  })
+}
 
-    if (!node || node.type !== 'ClassDeclaration') continue
-    const className = node.id ? node.id.name : ''
-
-    if (node.superClass.type === 'Identifier') {
-      if ([comopnentLabel, pureComponentLabel].indexOf((node.superClass).name) > -1) {
-        (node.superClass).name += `<I${className}Props, I${className}State>`;
-      }
-    } else if (node.superClass.type === 'MemberExpression') {
-      const object = <babelTypes.Identifier>node.superClass.object
-      const property = <babelTypes.Identifier>node.superClass.property
-
-      const name = object.name + '.' + property.name
-      if ([comopnentLabel, pureComponentLabel].indexOf(name) > -1) {
-        property.name += `<I${className}Props, I${className}State>`
-      }
+function transformSuperClass (node: types.Expression, componentLabel: IGetComponentLabel, className: string): boolean {
+  const {comopnentLabel, pureComponentLabel} = componentLabel
+  if (types.isIdentifier(node)) {
+    if ([comopnentLabel, pureComponentLabel].indexOf(node.name) > -1) {
+      node.name += `<I${className}Props, I${className}State>`;
     }
-
-    const {ast: interfaceAST} = babel.transform(`
-      interface I${className}Props {
-        [key: string]: any
-      }
-      interface I${className}State {
-        [key: string]: any
-      }
-    `, {
-      plugins: ["syntax-typescript"]
-    });
-
-    const interfaceBody = (<babelTypes.File>interfaceAST).program.body
-
-    ast.program.body.splice(i, 0, ...interfaceBody)
-    i += interfaceBody.length
+    return true
   }
+  if (types.isMemberExpression(node)) {
+    const object = <types.Identifier>node.object
+    const property = <types.Identifier>node.property
+
+    const name = object.name + '.' + property.name
+    if ([comopnentLabel, pureComponentLabel].indexOf(name) > -1) {
+      property.name += `<I${className}Props, I${className}State>`
+    }
+    return true
+  }
+  return false
+}
+
+// NOTE: ClassDeclaration may be decorated by export.
+// ClassExpression may be wrapper with function
+// Maybe it has a better way to find the insertable parent?
+function getInsertableParent(path) {
+  if (!path.parentPath) return null
+  if (
+    types.isExportDefaultDeclaration(path.parentPath) ||
+    types.isExportNamedDeclaration(path.parentPath) ||
+    types.isCallExpression(path.parentPath)
+  ) {
+    return getInsertableParent(path.parentPath)
+  }
+  return path
 }
 
 interface IGetComponentLabel {
@@ -64,7 +81,7 @@ interface IGetComponentLabel {
  *   import React, {Comopnent, PureComponent} from 'react'
  * or use React.Component / React.PureComponent directly.
  */
-function getComponentLabel (ast: babelTypes.File): IGetComponentLabel {
+function getComponentLabel (ast: types.File): IGetComponentLabel {
   let reactLabel = 'React'
   let comopnentLabel = ''
   let pureComponentLabel = ''

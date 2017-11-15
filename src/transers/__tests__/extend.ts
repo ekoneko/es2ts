@@ -72,6 +72,32 @@ class B extends React.PureComponent<IBProps, IBState> {
 }
 `.trim()
 
+const code2 = `
+import React from 'react';
+withWrapper(
+  class Tile extends React.PureComponent {
+    render() {
+      return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+    }
+  }
+)
+`.trim()
+
+const result2 = `
+import React from 'react';
+interface ITileProps {
+  [key: string]: any;
+}
+interface ITileState {
+  [key: string]: any;
+}
+withWrapper(class Tile extends React.PureComponent<ITileProps, ITileState> {
+  render() {
+    return this.props.draggable ? <DndFileTile {...this.props} /> : <StyledFileTile {...this.props} />;
+  }
+});
+`.trim()
+
 const cases = {}
 prefixs.map(pre => {
   cases[pre||'default'] = {
@@ -100,5 +126,12 @@ describe('extends transform', () => {
     extend(ast, code1)
     const {code: generateCode} = babelGenerator(ast, {}, code1)
     expect(format(generateCode)).toBe(result1)
+  })
+
+  it('with wrapper', () => {
+    const ast = getAST(code2)
+    extend(ast, code2)
+    const {code: generateCode} = babelGenerator(ast, {}, code2)
+    expect(format(generateCode)).toBe(result2)
   })
 })

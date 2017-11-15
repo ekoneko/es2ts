@@ -9,14 +9,6 @@ class A {
 }
 ````
 
-2. Can not find Class declaration behind block
-
-````js
-withWrapper(
-  class Comp {}
-)
-````
-
 3. transform below:
 ````js
 const o = {}  // should declare `any`

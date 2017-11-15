@@ -1,52 +1,46 @@
 import * as babel from 'babel-core'
-import * as babelTypes from 'babel-types'
+import traverse from 'babel-traverse'
+import * as types from 'babel-types'
 
 /**
  * Add declare for implicite static varible
  */
-export default function (ast: babelTypes.File, content: string) {
-  // TODO: multiple class declare in one file?
+export default function (ast: types.File, content: string) {
   let classNode
-  const properties = []
-  for (let i = 0; i < ast.program.body.length; i++) {
-    let node  = ast.program.body[i]
+  const properties = {}
+  const classNodes = {}
 
-    if (node.type === 'ExportNamedDeclaration') {
-      node = <any>node.declaration
-    } else if (node.type === 'ExportDefaultDeclaration') {
-      node = <any>node.declaration
-    }
-
-    if (node && node.type === 'ClassDeclaration') {
-      classNode = node
-    } else if (classNode && node.type === 'ExpressionStatement') {
-      const expression = node.expression
-
+  traverse(ast, {
+    enter(path) {
+      const { node } = path
+      if (types.isClassDeclaration(node) || types.isClassExpression(node)) {
+        classNodes[node.id.name] = node
+      }
       if (
-        expression &&
-        expression.type === 'AssignmentExpression' &&
-        expression.operator === '=' &&
-        expression.left.type === 'MemberExpression' &&
-        expression.left.object.type === 'Identifier' &&
-        expression.left.property.type === 'Identifier'
+        types.isAssignmentExpression(node, {operator: '='}) &&
+        types.isMemberExpression(node.left) &&
+        types.isIdentifier(node.left.object) &&
+        types.isIdentifier(node.left.property)
       ) {
-        if (expression.left.object.name === classNode.id.name) {
-          properties.push(expression.left.property.name)
-        }
+        properties[node.left.object.name] = properties[node.left.object.name] || []
+        properties[node.left.object.name].push(node.left.property.name)
       }
     }
-  }
+  })
 
-  if (classNode && properties.length) {
-    const { ast: declareAst } = babel.transform(`
-      class Temp {
-        ${properties.map(p => `static ${p}`).join('\n')}
-      }
-    `, {
-      plugins: ["syntax-typescript", "syntax-class-properties"]
-    });
-    const classDeclare = <babelTypes.ClassDeclaration>(<babelTypes.File>declareAst).program.body[0]
-
-    classNode.body.body.splice(0, 0, ...classDeclare.body.body)
+  for (let className in classNodes) {
+    const propertie = properties[className]
+    const classNode = classNodes[className]
+    if (propertie) {
+      const { ast: declareAst } = babel.transform(`
+        class Temp {
+            ${propertie.map(p => `static ${p}`).join('\n')}
+          }
+      `, {
+        plugins: ["syntax-typescript", "syntax-class-properties"]
+      })
+      const classDeclare = <types.ClassDeclaration>(<types.File>declareAst).program.body[0]
+      classNode.body.body.splice(0, 0, ...classDeclare.body.body)
+    }
   }
 }

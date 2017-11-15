@@ -8,8 +8,9 @@ import * as babelTypes from 'babel-types'
 export default function (ast: babelTypes.File, content: string) {
   traverse(ast, {
     enter(path) {
-      if (path.node.type !== 'ClassDeclaration') return
-      const node = <babelTypes.ClassDeclaration>path.node
+      const {node} = path
+      if (!babel.types.isClassDeclaration(node) && !babel.types.isClassExpression(node)) return
+
       // TODO: detect verify class is react
       const definedNames = ['state', 'props', 'context']
       const unDefinedNames = []
