@@ -1,40 +1,44 @@
 import * as babel from 'babel-core'
 import traverse from 'babel-traverse'
-import * as babelTypes from 'babel-types'
+import * as types from 'babel-types'
 
 /**
  * Add class properties's declaration
  */
-export default function (ast: babelTypes.File, content: string) {
+export default function (ast: types.File, content: string) {
   traverse(ast, {
     enter(path) {
       const {node} = path
-      if (!babel.types.isClassDeclaration(node) && !babel.types.isClassExpression(node)) return
+      if (!types.isClassDeclaration(node) && !types.isClassExpression(node)) return
 
       // TODO: detect verify class is react
       const definedNames = ['state', 'props', 'context']
       const unDefinedNames = []
-      traverse(node.body, {
-        enter(path) {
-          const { node, parent, scope, parentPath} = path
-          if (node.type === 'ClassProperty') {
-            definedNames.push((<babelTypes.ClassProperty>node).key.name)
-          }
 
-          if (node.type === 'ThisExpression') {
-            const property = (<babelTypes.MemberExpression>parent).property
-            if (property && property.type === 'Identifier') {
-              if (
-                definedNames.indexOf(property.name) === -1 &&
-                unDefinedNames.indexOf(property.name) === -1 &&
-                parentPath.parent.type !== 'CallExpression' // not call class method
-              ) {
-                unDefinedNames.push(property.name)
-              }
-            }
+      path.traverse({
+        ClassProperty({node}) {
+          if (types.isIdentifier(node.key)) {
+            definedNames.push(node.key.name)
           }
-        }
-      }, path.scope)
+        },
+        ClassMethod({node}) {
+          if (types.isIdentifier(node.key)) {
+            definedNames.push(node.key.name)
+          }
+        },
+        ThisExpression(path) {
+          if (!path.parentPath.isMemberExpression()) return
+          const property = (<types.MemberExpression>path.parent).property
+          if (
+            !types.isIdentifier(property) ||
+            definedNames.indexOf(property.name) > -1 ||
+            unDefinedNames.indexOf(property.name) > -1
+          ) {
+            return
+          }
+          unDefinedNames.push(property.name)
+        },
+      })
 
       const { ast: declareAst } = babel.transform(`
         class Temp {
@@ -42,8 +46,9 @@ export default function (ast: babelTypes.File, content: string) {
         }
       `, {
         plugins: ["syntax-typescript", "syntax-class-properties"]
-      });
-      const classDeclare = <babelTypes.ClassDeclaration>(<babelTypes.File>declareAst).program.body[0]
+      })
+
+      const classDeclare = <types.ClassDeclaration>(<types.File>declareAst).program.body[0]
       node.body.body.splice(0, 0, ...classDeclare.body.body)
     }
   })

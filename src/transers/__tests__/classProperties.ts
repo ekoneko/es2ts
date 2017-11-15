@@ -7,8 +7,10 @@ import React, { PureComponent } from 'react';
 class Tile extends PureComponent {
   private tail
   update() {}
+  handle() {}
   render() {
     this.update()
+    this.handle = this.handle.bind(this)
     const content = this.title + this.content + this.tail;
     return <div>{this.title}{content}</div>;
   }
@@ -22,8 +24,10 @@ class Tile extends PureComponent {
   private content: any;
   private tail;
   update() {}
+  handle() {}
   render() {
     this.update();
+    this.handle = this.handle.bind(this);
     const content = this.title + this.content + this.tail;
     return <div>{this.title}{content}</div>;
   }

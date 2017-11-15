@@ -1,14 +1,3 @@
-1. Some wrong for matcing class property
-
-````js
-class A {
-  this.meth = () => {}
-  o = {
-    meth: this.meth // <- should not identify as class property
-  }
-}
-````
-
 3. transform below:
 ````js
 const o = {}  // should declare `any`
