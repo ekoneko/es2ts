@@ -12,6 +12,7 @@ import extendTranser from './transers/extend'
 import implicitStaticVaribleTranser from './transers/implicitStaticVarible'
 import classPropertiesTranser from './transers/classProperties'
 import styleComponentsTranser from  './transers/styleComponents'
+import ImplicitObjectAnyTranser from './transers/ImplicitObjectAny'
 
 const readFileAsync = promisify(fs.readFile)
 const writeFileAsync = promisify(fs.writeFile)
@@ -72,6 +73,7 @@ function transform (ast: babelTypes.File, content: string): string {
   implicitStaticVaribleTranser(ast, content)
   classPropertiesTranser(ast, content)
   styleComponentsTranser(ast, content)
+  ImplicitObjectAnyTranser(ast, content)
 
   const {code} = babelGenerator(ast, {}, content)
   return code
