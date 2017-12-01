@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
-import styleComponents from '../styleComponents'
+import StyleComponents from '../styleComponents'
+import { transformPartial } from '../../transform'
+
+const styleComponents = transformPartial(StyleComponents)
 
 const code = `
 import styled from 'styled-components';

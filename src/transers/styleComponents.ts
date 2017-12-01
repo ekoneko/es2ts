@@ -1,52 +1,56 @@
 import * as babel from 'babel-core'
+import { NodePath } from 'babel-traverse'
 import * as types from 'babel-types'
-import traverse from 'babel-traverse'
+import AbstractTranser from './Abstract'
 
 /**
  * Add declare for implicite static varible
  */
-export default function (ast: types.File, content: string) {
-  const styledComponent = getStyledComponentName(ast)
-  if (!styledComponent) return
+export default class StyleComponentsTranser extends AbstractTranser {
+  private styledComponent
 
-  traverse(ast, {
-    enter(path) {
-      const { node, parentPath } = path
-      if (node.type === 'Identifier' && (<types.Identifier>node).name === styledComponent.name) {
-        if (
-          parentPath.type !== 'MemberExpression' &&
-          parentPath.parent.type !== 'TaggedTemplateExpression'
-        ) return
+  before(ast: types.File, content: string) {
+    this.styledComponent = getStyledComponentName(ast)
+  }
 
-        let taggedTemplateExpression = parentPath.parentPath
+  exec(path: NodePath, ast: types.File, content: string) {
+    if (!this.styledComponent) return
 
-        for (let i = 0; i < 3; i++) {
-          if (taggedTemplateExpression.type === 'TaggedTemplateExpression') break;
-          taggedTemplateExpression = taggedTemplateExpression.parentPath
-        }
-        if (taggedTemplateExpression.type !== 'TaggedTemplateExpression') return
+    const { node, parentPath } = path
+    if (node.type === 'Identifier' && (<types.Identifier>node).name === this.styledComponent.name) {
+      if (
+        parentPath.type !== 'MemberExpression' &&
+        parentPath.parent.type !== 'TaggedTemplateExpression'
+      ) return
 
-        let quasi = (<types.TaggedTemplateExpression>taggedTemplateExpression.node).quasi
-        // NOTE: look for one more parent if with `.attr()` or etc
-        if (!quasi) return
-        const expressions = quasi.expressions
-        for (let i in expressions) {
-          const expression = expressions[i]
-          if (expression.type === 'ArrowFunctionExpression') {
-            expression.params.forEach((param: types.Identifier) => {
-              param.name = `(${param.name}: any)`
-            })
-          }
-        }
-        if (expressions.length > 0) {
-          const variableDeclarator = <types.VariableDeclarator>taggedTemplateExpression.parent
-          addPropTypes(variableDeclarator)
+      let taggedTemplateExpression = parentPath.parentPath
 
-          addStyledComponentClassRef(styledComponent.node)
+      for (let i = 0; i < 3; i++) {
+        if (taggedTemplateExpression.type === 'TaggedTemplateExpression') break;
+        taggedTemplateExpression = taggedTemplateExpression.parentPath
+      }
+      if (taggedTemplateExpression.type !== 'TaggedTemplateExpression') return
+
+      let quasi = (<types.TaggedTemplateExpression>taggedTemplateExpression.node).quasi
+      // NOTE: look for one more parent if with `.attr()` or etc
+      if (!quasi) return
+      const expressions = quasi.expressions
+      for (let i in expressions) {
+        const expression = expressions[i]
+        if (expression.type === 'ArrowFunctionExpression') {
+          expression.params.forEach((param: types.Identifier) => {
+            param.name = `(${param.name}: any)`
+          })
         }
       }
+      if (expressions.length > 0) {
+        const variableDeclarator = <types.VariableDeclarator>taggedTemplateExpression.parent
+        addPropTypes(variableDeclarator)
+
+        addStyledComponentClassRef(this.styledComponent.node)
+      }
     }
-  })
+  }
 }
 
 /**

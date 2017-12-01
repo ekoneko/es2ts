@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
 import ImplicitObjectAny from '../ImplicitObjectAny'
+import { transformPartial } from '../../transform'
+
+const implicitObjectAny = transformPartial(ImplicitObjectAny)
 
 const code = `
 const a = {}
@@ -37,7 +40,7 @@ function format (content) {
 describe('implicit object any', () => {
   it('default', () => {
     const ast = getAST(code)
-    ImplicitObjectAny(ast, code)
+    implicitObjectAny(ast, code)
     const {code: generateCode} = babelGenerator(ast, {}, code)
     expect(format(generateCode)).toBe(result)
   })

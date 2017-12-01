@@ -1,35 +1,34 @@
 import * as babel from 'babel-core'
-import traverse from 'babel-traverse'
+import { NodePath } from 'babel-traverse'
 import * as types from 'babel-types'
 import {getComponentLabel, IGetComponentLabel} from '../utils'
+import AbstractTranser from './Abstract'
 
 /**
  * Transform `class Name extends Component` to `class Name extends Component<NameProps, NameState>`
  */
-export default function (ast: types.File, content: string) {
-  traverse(ast, {
-    enter(path) {
-      const { node } = path
-      if (!types.isClassDeclaration(node) && !types.isClassExpression(node)) return
-      const className = node.id ? node.id.name : ''
+export default class Extend extends AbstractTranser {
+  exec(path: NodePath, ast: types.File, content: string) {
+    const { node } = path
+    if (!types.isClassDeclaration(node) && !types.isClassExpression(node)) return
+    const className = node.id ? node.id.name : ''
 
-      transformSuperClass(node.superClass, getComponentLabel(ast), className)
+    transformSuperClass(node.superClass, getComponentLabel(ast), className)
 
-      const interfaceAST = <types.File>babel.transform(`
-        interface I${className}Props {
-          [key: string]: any
-        }
-        interface I${className}State {
-          [key: string]: any
-        }
-      `, {
-        plugins: ["syntax-typescript"]
-      }).ast
+    const interfaceAST = <types.File>babel.transform(`
+      interface I${className}Props {
+        [key: string]: any
+      }
+      interface I${className}State {
+        [key: string]: any
+      }
+    `, {
+      plugins: ["syntax-typescript"]
+    }).ast
 
-      const insertPath = getInsertableParent(path)
-      insertPath.insertBefore(interfaceAST.program.body)
-    }
-  })
+    const insertPath = getInsertableParent(path)
+    insertPath.insertBefore(interfaceAST.program.body)
+  }
 }
 
 function transformSuperClass (node: types.Expression, componentLabel: IGetComponentLabel, className: string): boolean {

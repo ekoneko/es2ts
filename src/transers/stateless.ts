@@ -1,41 +1,41 @@
 import * as babel from 'babel-core'
+import { NodePath } from 'babel-traverse'
 import * as types from 'babel-types'
-import traverse, {NodePath} from 'babel-traverse'
+import AbstractTranser from './Abstract'
 import {getComponentLabel, IGetComponentLabel} from '../utils'
 
 /**
  * Add declare for implicite static varible
  */
-export default function (ast: types.File, content: string) {
-  traverse(ast, {
-    enter(path) {
-      // ReturnStatement -> BlockStatement -> FunctionDeclaration
-      // ReturnStatement -> BlockStatement -> ArrowFunctionExpression
-      // ReturnStatement -> BlockStatement -> FunctionExpression
-      if (path.isJSXElement()) {
-        if (
-          !path.parentPath.isReturnStatement() ||
-          !path.parentPath.parentPath.isBlockStatement()
-        ) return
+// StatelessTranser
+export default class StatelessTranser extends AbstractTranser {
+  exec(path: NodePath, ast: types.File, content: string) {
+    // ReturnStatement -> BlockStatement -> FunctionDeclaration
+    // ReturnStatement -> BlockStatement -> ArrowFunctionExpression
+    // ReturnStatement -> BlockStatement -> FunctionExpression
+    if (path.isJSXElement()) {
+      if (
+        !path.parentPath.isReturnStatement() ||
+        !path.parentPath.parentPath.isBlockStatement()
+      ) return
 
-        const declarePath = path.parentPath.parentPath.parentPath
+      const declarePath = path.parentPath.parentPath.parentPath
 
-        if (declarePath.isFunctionDeclaration()) {
-          const id = declarePath.get('id')
-          if (!id.isIdentifier()) return
-          const name = (<types.Identifier>id.node).name
+      if (declarePath.isFunctionDeclaration()) {
+        const id = declarePath.get('id')
+        if (!id.isIdentifier()) return
+        const name = (<types.Identifier>id.node).name
 
-          insertPropTypes(name, <any>declarePath)
-        }
-        if (declarePath.isArrowFunctionExpression()) {
-          parseFunctionExpression(declarePath, getComponentLabel(ast))
-        }
-        if (declarePath.isFunctionExpression()) {
-          parseFunctionExpression(declarePath, getComponentLabel(ast))
-        }
+        insertPropTypes(name, <any>declarePath)
+      }
+      if (declarePath.isArrowFunctionExpression()) {
+        parseFunctionExpression(declarePath, getComponentLabel(ast))
+      }
+      if (declarePath.isFunctionExpression()) {
+        parseFunctionExpression(declarePath, getComponentLabel(ast))
       }
     }
-  })
+  }
 }
 
 function parseFunctionExpression(

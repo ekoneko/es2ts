@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
-import extend from '../extend'
+import Extend from '../extend'
+import { transformPartial } from '../../transform'
+
+const extend = transformPartial(Extend)
 
 const prefixs = [
   '',

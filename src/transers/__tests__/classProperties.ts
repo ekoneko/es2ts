@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
-import classProperties from '../classProperties'
+import ClassPropertiesTranser from '../classProperties'
+import { transformPartial } from '../../transform'
+
+const classProperties = transformPartial(ClassPropertiesTranser)
 
 const code = `
 import React, { PureComponent } from 'react';

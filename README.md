@@ -18,7 +18,7 @@ Support more syntax
 
 Parse React propTypes
 
-Improve algorithm 
+Improve algorithm
 
 ## How to
 
@@ -27,7 +27,7 @@ I'll support a cli tool.
 Now create a js file, import this library, and write:
 
 ````js
-const {transformDir} = require('es2ts/lib/transform')
+const {transformDir} = require('es2ts')
 
 transformDir('/path/to/project', undefined/* dist directory, default is project self */, {
   // glob options

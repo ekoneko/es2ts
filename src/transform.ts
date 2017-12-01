@@ -1,82 +1,66 @@
-
-import * as fs from 'fs'
-import * as path from 'path'
-import { promisify }  from 'util'
-import { includeJSX, getAST } from './utils'
 import * as babel from 'babel-core'
-import * as babelTypes from 'babel-types'
-import babelGenerator from 'babel-generator'
-import * as glob from 'glob'
+import * as types from 'babel-types'
+import generator from 'babel-generator'
+import traverse from 'babel-traverse'
 
-import extendTranser from './transers/extend'
-import implicitStaticVaribleTranser from './transers/implicitStaticVarible'
-import classPropertiesTranser from './transers/classProperties'
-import styleComponentsTranser from  './transers/styleComponents'
+import Abstract, { TranserInterface } from './transers/Abstract'
+import ExtendTranser from './transers/extend'
+import ImplicitStaticVaribleTranser from './transers/implicitStaticVarible'
+import ClassPropertiesTranser from './transers/classProperties'
+import StyleComponentsTranser from  './transers/styleComponents'
 import ImplicitObjectAnyTranser from './transers/ImplicitObjectAny'
-import statelessTranser from './transers/stateless'
+import StatelessTranser from './transers/stateless'
 
-const readFileAsync = promisify(fs.readFile)
-const writeFileAsync = promisify(fs.writeFile)
+const makeBeforeTraverse = (transers: TranserInterface[]) => (ast, content) => {
+  transers.forEach(transer => transer.before(ast, content))
+}
+
+const makeAfterTraverse = (transers: TranserInterface[]) => (ast, content) => {
+  transers.forEach(transer => transer.after(ast, content))
+}
+
+const makeExecTraverse = (transers: TranserInterface[]) => (path, ast, content) => {
+  transers.forEach(transer => transer.exec(path, ast, content))
+}
+
+const walk = (transers: TranserInterface[]) => (ast: types.File, content) => {
+  const beforeTraverse = makeBeforeTraverse(transers)
+  const afterTraverse = makeAfterTraverse(transers)
+  const execTraverse = makeExecTraverse(transers)
+
+  beforeTraverse(ast, content)
+  traverse(ast, {
+    enter(path) {
+      execTraverse(path, ast, content)
+    }
+  })
+  afterTraverse(ast, content)
+}
+
+export default function transform (ast: types.File, content: string): string {
+  walk([
+    new ExtendTranser(),
+    new ImplicitStaticVaribleTranser(),
+    new ClassPropertiesTranser(),
+    new StyleComponentsTranser(),
+    new ImplicitObjectAnyTranser(),
+    new StatelessTranser(),
+  ])(ast, content)
+
+  const {code} = generator(ast, {}, content)
+  return code
+}
 
 /**
- * Transform input .js file (es6+) to .ts
- * if the input file include some jsx, it will output a tsx file
+ * walk part of transers (for test one transer)
+ * @param ast
+ * @param content
  */
-export async function transformFile (src: string, dist?: string) {
-  console.log('transform file start', src);
-  const code = (await readFileAsync(src)).toString()
+export function transformPartial (TranserClass) {
+  return function (ast: types.File, content: string): string {
+    walk([new TranserClass()])(ast, content)
 
-  try {
-    const { content, ast } = transformContent(code)
-    const isJSX = () => includeJSX(ast)
-    const distTarget = getDistPath(src, dist, isJSX)
-    await writeFileAsync(distTarget, content)
-  } catch (e) {
-    console.error('[error(transform)]:', e)
+    const {code} = generator(ast, {}, content)
+    return code
   }
-}
-
-export async function transformDir (src: string, dist?: string, options?: any) {
-  const files = glob.sync(path.join(src, '**/*.js*'), options)
-  for (let i in files) {
-    try {
-      await transformFile(files[i])
-    } catch (e) {
-      console.error('[error]:', files[i], e)
-    }
-  }
-}
-
-export function transformContent (content: string) {
-  const ast = getAST(content)
-
-  // transform content
-  const nextContent = transform(ast, content)
-
-  return {
-    content: nextContent,
-    ast,
-  }
-}
-
-function getDistPath (src: string, dist: string|void, isJSX: () => boolean) {
-  const fileName = path.basename(src)
-  if (dist && dist.match(/\.tsx?$/)) {
-    return dist
-  }
-  const distPath = dist || path.dirname(src)
-  const distName = fileName.replace(/\.jsx?/, isJSX() ? '.tsx' : '.ts')
-  return path.resolve(distPath, distName)
-}
-
-function transform (ast: babelTypes.File, content: string): string {
-  extendTranser(ast, content)
-  implicitStaticVaribleTranser(ast, content)
-  classPropertiesTranser(ast, content)
-  styleComponentsTranser(ast, content)
-  ImplicitObjectAnyTranser(ast, content)
-  statelessTranser(ast, content)
-
-  const {code} = babelGenerator(ast, {}, content)
-  return code
 }

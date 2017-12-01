@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
-import implicitStaticVarible from '../implicitStaticVarible'
+import ImplicitStaticVarible from '../implicitStaticVarible'
+import { transformPartial } from '../../transform'
+
+const implicitStaticVarible = transformPartial(ImplicitStaticVarible)
 
 const prefixs = [
   '',

@@ -1,6 +1,9 @@
 import babelGenerator from 'babel-generator'
 import {getAST} from '../../utils'
-import stateless from '../stateless'
+import StatelessTranser from '../stateless'
+import { transformPartial } from '../../transform'
+
+const stateless = transformPartial(StatelessTranser)
 
 const code1 = `
 import React from 'react'
